@@ -1,0 +1,11 @@
+MoodNote v2 빠른 체크리스트
+
+[ ] Supabase 프로젝트 생성
+[ ] supabase.sql 실행
+[ ] config.js에 URL + Publishable key 입력
+[ ] GitHub Pages에 index.html + config.js 업로드
+[ ] 사이트에서 회원가입
+[ ] 이메일 인증이 켜져 있다면 인증
+[ ] 로그인
+[ ] 일기 저장 테스트
+[ ] 공유 버튼 테스트

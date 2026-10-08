@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#dfe2e5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="MoodNote">
+<title>MoodNote · 나를 기록하는 작은 공간</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+ --bg:#e9ebed;--surface:rgba(255,255,255,.72);--surface2:rgba(255,255,255,.9);
+ --ink:#25282c;--muted:#7c8289;--line:rgba(55,60,65,.13);
+ --silver:#aeb4ba;--silver2:#d6d9dc;--dark:#60666c;--shadow:0 22px 55px rgba(55,60,65,.13);
+}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+background:radial-gradient(circle at 15% 0%,#fff 0,transparent 34%),linear-gradient(135deg,#f5f6f7,#d9dcdf 52%,#f4f5f6);min-height:100vh}
+button,input,textarea{font:inherit}button{cursor:pointer}
+.hidden{display:none!important}.app{max-width:1180px;margin:auto;padding:24px 20px 70px}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:8px 0 22px}
+.logo{font-family:Georgia,serif;font-size:25px;letter-spacing:-.5px}.logo small{font-family:inherit;color:#8d9399;font-size:10px;display:block;letter-spacing:2.5px;margin-top:1px}
+.userbar{display:flex;align-items:center;gap:10px}.user-name{font-size:13px;color:#666d74}
+.avatar{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#fff,#b8bdc2);border:1px solid #fff;box-shadow:0 6px 18px #8883}
+.layout{display:grid;grid-template-columns:210px 1fr;gap:22px}
+.sidebar{background:rgba(255,255,255,.58);border:1px solid #fff8;border-radius:28px;padding:18px;box-shadow:var(--shadow);height:max-content;position:sticky;top:18px}
+.navbtn{width:100%;border:0;background:transparent;color:#747a80;text-align:left;padding:13px 14px;border-radius:15px;margin:3px 0}
+.navbtn.active{background:linear-gradient(135deg,#fff,#d4d7da);color:#24282c;box-shadow:0 8px 22px #7772}
+.navbtn span{display:inline-block;width:25px}.side-bottom{margin-top:24px;padding-top:15px;border-top:1px solid var(--line)}
+main{min-width:0}.page{display:none}.page.active{display:block}
+.hero{padding:8px 4px 17px}.eyebrow{font-size:11px;letter-spacing:2px;color:#8b9197;font-weight:800}.hero h1{font-family:Georgia,serif;font-size:38px;font-weight:500;margin:8px 0 7px;letter-spacing:-1.2px}.sub{margin:0;color:var(--muted);line-height:1.7}
+.card{background:var(--surface);border:1px solid #fff9;border-radius:25px;padding:22px;box-shadow:var(--shadow);backdrop-filter:blur(18px);margin-top:15px}
+.card h2{font-family:Georgia,serif;font-weight:500;font-size:19px;margin:0 0 5px}.hint{font-size:12px;color:var(--muted);margin-bottom:15px}
+.moods{display:grid;grid-template-columns:repeat(6,1fr);gap:9px}.mood{border:1px solid var(--line);background:#ffffff80;border-radius:18px;padding:13px 6px;color:var(--ink);transition:.2s}.mood:hover{transform:translateY(-2px)}
+.mood.selected{background:linear-gradient(145deg,#fff,#c7cbd0);border-color:#92989e;box-shadow:0 8px 20px #7773}.emoji{display:block;font-size:25px;margin-bottom:6px}.mood small{font-size:11px;color:#71777d}
+input[type=range]{width:100%;accent-color:#777d83}.range-row{display:flex;justify-content:space-between;color:var(--muted);font-size:11px}
+textarea{width:100%;min-height:230px;resize:vertical;background:#ffffffa8;border:1px solid var(--line);border-radius:17px;color:var(--ink);padding:16px;outline:0;line-height:1.8}
+input:focus,textarea:focus{border-color:#8c9298;box-shadow:0 0 0 3px #7772}
+.tags{display:flex;flex-wrap:wrap;gap:8px}.tag{padding:8px 12px;border-radius:99px;border:1px solid var(--line);background:#fff8;color:#777d83}.tag.selected{background:#bfc4c8;color:#25282c;border-color:#969ca1}
+.actions{display:flex;gap:10px;margin-top:15px}.primary{flex:1;border:0;border-radius:15px;padding:14px;background:linear-gradient(135deg,#858b90,#cfd2d5);color:white;font-weight:800;box-shadow:0 9px 20px #7773}.secondary{border:1px solid var(--line);background:#ffffff9e;color:#444a50;border-radius:15px;padding:13px 17px}
+.message{min-height:19px;margin-top:10px;color:#657069;font-size:12px}.privacy{text-align:center;color:#858b91;font-size:11px;margin-top:15px}
+.toolbar{display:flex;gap:9px;margin:17px 0}.toolbar input{flex:1;background:#ffffff9e;border:1px solid var(--line);border-radius:13px;padding:12px;color:var(--ink);outline:0}
+.entry{padding:17px 0;border-top:1px solid var(--line)}.entry:first-child{border-top:0}.entry-head{display:flex;justify-content:space-between;gap:12px}.entry-date{font-weight:700}.entry-mood{font-size:21px}.entry-preview{color:#555b61;line-height:1.7;margin:8px 0;white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.entry-meta{color:#858b91;font-size:11px}.delete{border:0;background:transparent;color:#9b6060;font-size:11px;padding:0}.share{border:0;background:transparent;color:#636a70;font-size:11px;padding:0;margin-left:10px}
+.empty{text-align:center;color:var(--muted);padding:45px 10px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}.stat{background:#ffffff9e;padding:17px;border-radius:18px;border:1px solid var(--line)}.stat span{font-size:11px;color:var(--muted)}.stat b{display:block;font-size:24px;margin-top:4px}
+.profile{display:grid;grid-template-columns:100px 1fr;gap:20px;align-items:center}.profile-avatar{width:90px;height:90px;border-radius:50%;display:grid;place-items:center;font-size:30px;background:linear-gradient(145deg,#fff,#aeb4ba);box-shadow:var(--shadow)}
+.profile h2{font-size:22px;margin:0 0 5px}.profile p{margin:0;color:var(--muted);font-size:13px}
+.sharebox{padding:12px;border-radius:15px;background:#f6f7f8;border:1px solid var(--line);word-break:break-all;font-size:12px;color:#626970;margin-top:10px}
+.auth-shell{min-height:calc(100vh - 90px);display:grid;place-items:center}.auth-card{width:min(440px,100%);background:#ffffffaa;border:1px solid #fff;border-radius:30px;padding:34px;box-shadow:0 30px 80px #5552;backdrop-filter:blur(22px)}
+.auth-logo{text-align:center;font:34px Georgia,serif;margin-bottom:7px}.auth-sub{text-align:center;color:var(--muted);font-size:12px;margin-bottom:26px}.field{margin:12px 0}.field label{display:block;font-size:11px;color:#747a80;margin:0 0 6px}.field input{width:100%;border:1px solid var(--line);background:#fff9;border-radius:13px;padding:13px;outline:0}.auth-actions{display:grid;gap:9px;margin-top:18px}.auth-note{text-align:center;color:var(--muted);font-size:11px;margin-top:16px}.linkbtn{border:0;background:transparent;color:#646a70;text-decoration:underline}
+.modal{position:fixed;inset:0;background:#3335;display:none;place-items:center;padding:18px;z-index:20}.modal.open{display:grid}.modal-card{width:min(500px,100%);background:#f5f6f7;border:1px solid #fff;border-radius:25px;padding:24px;box-shadow:0 30px 80px #3336}.modal-card h2{font-family:Georgia,serif;font-weight:500;margin:0 0 7px}.close{float:right;border:0;background:transparent;font-size:22px;color:#666}
+.share-switch{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--line)}
+.switch{width:48px;height:28px;border-radius:99px;border:0;background:#c3c7ca;position:relative}.switch:after{content:"";position:absolute;width:22px;height:22px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.2s;box-shadow:0 2px 5px #5554}.switch.on{background:#777d82}.switch.on:after{left:23px}
+footer{text-align:center;color:#858b91;font-size:10px;margin-top:25px}
+@media(max-width:800px){.layout{grid-template-columns:1fr}.sidebar{position:static;display:flex;overflow:auto;gap:5px;padding:9px;border-radius:20px}.navbtn{min-width:105px;text-align:center;margin:0}.side-bottom{display:none}.moods{grid-template-columns:repeat(3,1fr)}.hero h1{font-size:31px}.stats{grid-template-columns:1fr 1fr}.stat:last-child{grid-column:span 2}}
+@media(max-width:520px){.app{padding:15px 12px 50px}.topbar{padding-bottom:13px}.user-name{display:none}.card{padding:17px}.profile{grid-template-columns:75px 1fr}.profile-avatar{width:70px;height:70px}.auth-card{padding:25px 19px}}
+</style>
+</head>
+<body>
+<div id="authView" class="auth-shell">
+  <div class="auth-card">
+    <div class="auth-logo">MoodNote</div>
+    <div class="auth-sub">Better days, brighter you</div>
+    <div id="loginForm">
+      <div class="field"><label>이메일</label><input id="loginEmail" type="email" autocomplete="email" placeholder="이메일을 입력해주세요"></div>
+      <div class="field"><label>비밀번호</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="비밀번호를 입력해주세요"></div>
+      <div class="auth-actions"><button class="primary" id="loginBtn">로그인</button><button class="linkbtn" id="showSignup">계정이 없나요? 회원가입</button></div>
+    </div>
+    <div id="signupForm" class="hidden">
+      <div class="field"><label>이름</label><input id="signupName" maxlength="30" placeholder="표시할 이름"></div>
+      <div class="field"><label>이메일</label><input id="signupEmail" type="email" autocomplete="email" placeholder="이메일을 입력해주세요"></div>
+      <div class="field"><label>비밀번호</label><input id="signupPassword" type="password" autocomplete="new-password" placeholder="6자 이상"></div>
+      <div class="auth-actions"><button class="primary" id="signupBtn">회원가입</button><button class="linkbtn" id="showLogin">이미 계정이 있나요? 로그인</button></div>
+    </div>
+    <div class="message" id="authMessage"></div>
+    <div class="auth-note">내 기록은 로그인한 계정에 연결되어 저장됩니다.</div>
+  </div>
+</div>
+
+<div id="appView" class="app hidden">
+<header class="topbar">
+  <div class="logo">MoodNote<small>MY PRIVATE SPACE</small></div>
+  <div class="userbar"><span id="userName" class="user-name"></span><div class="avatar">◌</div></div>
+</header>
+<div class="layout">
+<aside class="sidebar">
+  <button class="navbtn active" data-page="home"><span>⌂</span>홈</button>
+  <button class="navbtn" data-page="write"><span>□</span>일기 쓰기</button>
+  <button class="navbtn" data-page="history"><span>▣</span>기록 보기</button>
+  <button class="navbtn" data-page="stats"><span>◒</span>감정 통계</button>
+  <button class="navbtn" data-page="shared"><span>⌘</span>공유한 일기</button>
+  <button class="navbtn" data-page="profile"><span>♙</span>마이페이지</button>
+  <div class="side-bottom"><button class="navbtn" id="logoutBtn"><span>↪</span>로그아웃</button></div>
+</aside>
+
+<main>
+<section id="home" class="page active">
+<div class="hero"><div class="eyebrow">MOODNOTE</div><h1 id="hello">안녕, 오늘도 잘 지냈어?</h1><p class="sub">오늘의 마음을 천천히 기록하고, 나만의 흐름을 돌아봐.</p></div>
+<div class="card"><h2>오늘의 감정</h2><div class="hint">지금 가장 가까운 감정을 골라봐.</div><div class="moods" id="homeMoods"></div><div class="actions"><button class="primary" id="homeWrite">오늘의 일기 쓰기 →</button></div></div>
+<div class="card"><h2>최근 일기</h2><div id="recentEntries"></div></div>
+</section>
+
+<section id="write" class="page">
+<div class="hero"><div class="eyebrow">WRITE</div><h1>오늘의 일기</h1><p class="sub">잘 쓸 필요 없어. 생각나는 대로 적어도 충분해.</p></div>
+<div class="card"><h2>오늘의 감정</h2><div class="hint">가장 가까운 감정을 하나 골라줘.</div><div class="moods" id="moods"></div></div>
+<div class="card"><h2>감정의 강도</h2><div class="hint">오늘 느낀 감정이 얼마나 강했는지 표시해줘.</div><input id="intensity" type="range" min="1" max="5" value="3"><div class="range-row"><span>조금</span><b id="intensityValue">3 / 5</b><span>아주 강하게</span></div></div>
+<div class="card"><h2>오늘의 키워드</h2><div class="hint">오늘을 설명하는 단어를 골라도 좋아.</div><div class="tags" id="tags"></div></div>
+<div class="card"><h2>오늘의 일기</h2><textarea id="diary" placeholder="오늘 있었던 일, 생각, 감정, 아무 말이나 적어보세요..."></textarea><div class="actions"><button class="secondary" id="clearBtn">비우기</button><button class="primary" id="saveBtn">오늘의 기록 저장하기</button></div><div class="message" id="message"></div></div>
+<div class="privacy">☁️ 로그인한 계정에 안전하게 저장돼요.</div>
+</section>
+
+<section id="history" class="page"><div class="hero"><div class="eyebrow">MY JOURNAL</div><h1>지난 기록</h1><p class="sub">내가 어떤 하루들을 지나왔는지 돌아봐.</p></div><div class="toolbar"><input id="search" placeholder="일기 내용이나 날짜 검색"></div><div class="card" id="entries"></div></section>
+
+<section id="stats" class="page"><div class="hero"><div class="eyebrow">MY MOOD</div><h1>나의 감정 기록</h1><p class="sub">내 기록을 바탕으로 마음의 흐름을 살펴봐.</p></div><div class="stats"><div class="stat"><span>총 기록</span><b id="total">0</b></div><div class="stat"><span>가장 많이 느낀 감정</span><b id="topMood">—</b></div><div class="stat"><span>평균 감정 강도</span><b id="avgIntensity">—</b></div></div><div class="card"><h2>감정 분포</h2><div id="moodSummary" style="margin-top:15px"></div></div></section>
+
+<section id="shared" class="page"><div class="hero"><div class="eyebrow">SHARED</div><h1>공유한 일기</h1><p class="sub">내가 공유를 켠 기록만 여기에서 확인할 수 있어.</p></div><div class="card" id="sharedEntries"></div></section>
+
+<section id="profile" class="page"><div class="hero"><div class="eyebrow">MY ACCOUNT</div><h1>마이페이지</h1><p class="sub">계정과 기록 설정을 관리해.</p></div><div class="card"><div class="profile"><div class="profile-avatar">◌</div><div><h2 id="profileName">—</h2><p id="profileEmail">—</p></div></div></div><div class="card"><h2>계정</h2><div class="actions"><button class="secondary" id="profileLogout">로그아웃</button></div></div></section>
+</main></div><footer>MoodNote · 나를 기록하는 작은 공간</footer>
+</div>
+
+<div class="modal" id="shareModal"><div class="modal-card"><button class="close" id="closeShare">×</button><h2>일기 공유</h2><p class="sub">공유를 켜면 링크를 가진 사람이 이 일기를 볼 수 있어.</p><div class="share-switch"><span>공유 허용</span><button class="switch" id="shareSwitch"></button></div><div id="shareUrl" class="sharebox hidden"></div><div class="actions"><button class="secondary" id="copyShare">링크 복사</button><button class="primary" id="doneShare">완료</button></div><div class="message" id="shareMessage"></div></div></div>
+
+<script>
+const CONFIG = window.MOODNOTE_CONFIG || {};
+const SUPABASE_URL = CONFIG.url || "";
+const SUPABASE_KEY = CONFIG.publishableKey || "";
+const configured = SUPABASE_URL && SUPABASE_KEY && !SUPABASE_URL.includes("YOUR_") && !SUPABASE_KEY.includes("YOUR_");
+let sb = null, currentUser = null, selectedMood=null, selectedTags=[], editingId=null, shareTarget=null;
+
+const moods=[{id:"happy",e:"😊",name:"행복"},{id:"calm",e:"😌",name:"편안"},{id:"normal",e:"😐",name:"보통"},{id:"sad",e:"😢",name:"슬픔"},{id:"angry",e:"😡",name:"화남"},{id:"anxious",e:"😰",name:"불안"}];
+const tags=["학교","공부","친구","가족","취미","여행","좋았던 날","힘든 날","생각이 많음"];
+const $=id=>document.getElementById(id);
+const todayISO=()=>new Date().toISOString().slice(0,10);
+const formatDate=s=>new Date(s+"T00:00:00").toLocaleDateString("ko-KR",{year:"numeric",month:"long",day:"numeric",weekday:"short"});
+const moodObj=id=>moods.find(x=>x.id===id)||moods[2];
+const esc=s=>String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+function authMsg(t){$("authMessage").textContent=t||""}
+function showAuth(form="login"){ $("authView").classList.remove("hidden"); $("appView").classList.add("hidden"); $("loginForm").classList.toggle("hidden",form!=="login"); $("signupForm").classList.toggle("hidden",form!=="signup"); }
+function showApp(){ $("authView").classList.add("hidden"); $("appView").classList.remove("hidden"); }
+function nav(page){document.querySelectorAll(".navbtn[data-page]").forEach(x=>x.classList.toggle("active",x.dataset.page===page));document.querySelectorAll(".page").forEach(x=>x.classList.toggle("active",x.id===page));if(page==="home")renderHome();if(page==="history")renderHistory();if(page==="stats")renderStats();if(page==="shared")renderShared();if(page==="profile")renderProfile();window.scrollTo({top:0,behavior:"smooth"})}
+
+function initUI(){
+  $("moods").innerHTML=moods.map(m=>`<button class="mood" data-id="${m.id}"><span class="emoji">${m.e}</span><small>${m.name}</small></button>`).join("");
+  $("homeMoods").innerHTML=moods.map(m=>`<button class="mood" data-id="${m.id}"><span class="emoji">${m.e}</span><small>${m.name}</small></button>`).join("");
+  $("tags").innerHTML=tags.map(t=>`<button class="tag" data-tag="${t}">${t}</button>`).join("");
+  document.querySelectorAll("#moods .mood").forEach(b=>b.onclick=()=>selectMood(b.dataset.id));
+  document.querySelectorAll("#tags .tag").forEach(b=>b.onclick=()=>toggleTag(b.dataset.tag,b));
+  document.querySelectorAll("#homeMoods .mood").forEach(b=>b.onclick=()=>{selectMood(b.dataset.id);nav("write")});
+  document.querySelectorAll(".navbtn[data-page]").forEach(b=>b.onclick=()=>nav(b.dataset.page));
+  $("homeWrite").onclick=()=>nav("write");
+  $("intensity").oninput=e=>$("intensityValue").textContent=e.target.value+" / 5";
+  $("clearBtn").onclick=clearForm;
+  $("saveBtn").onclick=saveEntry;
+  $("search").oninput=renderHistory;
+  $("loginBtn").onclick=login;
+  $("signupBtn").onclick=signup;
+  $("showSignup").onclick=()=>{authMsg("");showAuth("signup")};
+  $("showLogin").onclick=()=>{authMsg("");showAuth("login")};
+  $("logoutBtn").onclick=logout; $("profileLogout").onclick=logout;
+  $("closeShare").onclick=closeShare; $("doneShare").onclick=closeShare; $("copyShare").onclick=copyShare;
+}
+function selectMood(id){selectedMood=id;document.querySelectorAll("#moods .mood").forEach(x=>x.classList.toggle("selected",x.dataset.id===id));document.querySelectorAll("#homeMoods .mood").forEach(x=>x.classList.toggle("selected",x.dataset.id===id))}
+function toggleTag(t,b){if(selectedTags.includes(t)){selectedTags=selectedTags.filter(x=>x!==t);b.classList.remove("selected")}else{selectedTags.push(t);b.classList.add("selected")}}
+function clearForm(){selectedMood=null;selectedTags=[];editingId=null;$("diary").value="";$("intensity").value=3;$("intensityValue").textContent="3 / 5";document.querySelectorAll(".mood,.tag").forEach(x=>x.classList.remove("selected"));$("message").textContent=""}
+function resetForm(){clearForm()}
+function loadEntry(x){selectedMood=x.mood;selectedTags=x.tags||[];editingId=x.id;$("diary").value=x.content||"";$("intensity").value=x.intensity||3;$("intensityValue").textContent=(x.intensity||3)+" / 5";document.querySelectorAll("#moods .mood").forEach(b=>b.classList.toggle("selected",b.dataset.id===selectedMood));document.querySelectorAll("#tags .tag").forEach(b=>b.classList.toggle("selected",selectedTags.includes(b.dataset.tag)));nav("write")}
+async function saveEntry(){
+ if(!selectedMood){$("message").textContent="먼저 오늘의 감정을 선택해줘.";return}
+ const content=$("diary").value.trim();if(!content){$("message").textContent="오늘의 일기를 한 줄이라도 적어줘.";return}
+ const row={user_id:currentUser.id,date:todayISO(),mood:selectedMood,intensity:+$("intensity").value,tags:selectedTags,content};
+ let q;
+ if(editingId){q=await sb.from("entries").update(row).eq("id",editingId).eq("user_id",currentUser.id).select().single()}
+ else{q=await sb.from("entries").insert(row).select().single()}
+ if(q.error){$("message").textContent="저장하지 못했어: "+q.error.message;return}
+ $("message").textContent="저장했어. 오늘의 마음이 잘 기록됐어.";
+ editingId=q.data.id;await renderHome();await renderHistory();await renderStats();
+}
+async function loadEntries(){const {data,error}=await sb.from("entries").select("id,date,mood,intensity,tags,content,is_shared,share_token,created_at").eq("user_id",currentUser.id).order("date",{ascending:false});if(error){console.error(error);return[]}return data||[]}
+async function renderHome(){if(!currentUser)return;const es=(await loadEntries()).slice(0,3);$("recentEntries").innerHTML=es.length?es.map(entryHTML).join(""):'<div class="empty">아직 기록이 없어.<br>오늘의 마음부터 하나 남겨볼까?</div>'}
+function entryHTML(x){const m=moodObj(x.mood);return `<div class="entry"><div class="entry-head"><div><div class="entry-date">${formatDate(x.date)}</div><div class="entry-meta">${m.name} · 감정 강도 ${x.intensity}/5 ${x.tags?.length?"· "+esc(x.tags.join(" · ")):""}</div></div><div class="entry-mood">${m.e}</div></div><div class="entry-preview">${esc(x.content)}</div><div><button class="delete" onclick="window.editEntry('${x.id}')">수정</button><button class="delete" onclick="window.deleteEntry('${x.id}')">삭제</button><button class="share" onclick="window.openShare('${x.id}')">${x.is_shared?"공유 중":"공유"}</button></div></div>`}
+window.editEntry=async id=>{const es=await loadEntries();const x=es.find(a=>a.id===id);if(x)loadEntry(x)}
+window.deleteEntry=async id=>{if(!confirm("이 기록을 삭제할까요?"))return;const {error}=await sb.from("entries").delete().eq("id",id).eq("user_id",currentUser.id);if(error)alert("삭제하지 못했어.");await renderHome();await renderHistory();await renderStats();await renderShared()}
+async function renderHistory(){if(!currentUser)return;let es=await loadEntries();const q=$("search").value.trim().toLowerCase();if(q)es=es.filter(x=>(x.content+x.date+(x.tags||[]).join(" ")+moodObj(x.mood).name).toLowerCase().includes(q));$("entries").innerHTML=es.length?es.map(entryHTML).join(""):'<div class="empty">아직 기록이 없어.</div>'}
+async function renderStats(){const es=await loadEntries();$("total").textContent=es.length;if(!es.length){$("topMood").textContent="—";$("avgIntensity").textContent="—";$("moodSummary").innerHTML='<div class="empty">기록이 쌓이면 여기에 감정 흐름이 보여요.</div>';return}const counts={};es.forEach(x=>counts[x.mood]=(counts[x.mood]||0)+1);const top=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];$("topMood").textContent=moodObj(top[0]).e+" "+moodObj(top[0]).name;$("avgIntensity").textContent=(es.reduce((a,x)=>a+x.intensity,0)/es.length).toFixed(1)+"/5";$("moodSummary").innerHTML=moods.map(m=>{const n=counts[m.id]||0,p=Math.round(n/es.length*100);return `<div style="display:flex;align-items:center;gap:10px;margin:12px 0"><span style="width:55px">${m.e} ${m.name}</span><div style="flex:1;height:9px;background:#cdd1d4;border-radius:9px;overflow:hidden"><div style="width:${p}%;height:100%;background:linear-gradient(90deg,#92989d,#d4d7da);border-radius:9px"></div></div><small style="width:30px;text-align:right;color:#858b91">${n}</small></div>`}).join("")}
+async function renderShared(){const es=(await loadEntries()).filter(x=>x.is_shared);$("sharedEntries").innerHTML=es.length?es.map(entryHTML).join(""):'<div class="empty">아직 공유한 일기가 없어.</div>'}
+function renderProfile(){const meta=currentUser.user_metadata||{};$("profileName").textContent=meta.display_name||"사용자";$("profileEmail").textContent=currentUser.email||"";$("userName").textContent=meta.display_name||currentUser.email||"";$("hello").textContent=`안녕, ${meta.display_name||"오늘도"} 오늘도 잘 지냈어?`}
+async function openShare(id){shareTarget=id;const es=await loadEntries();const x=es.find(a=>a.id===id);if(!x)return;$("shareSwitch").classList.toggle("on",!!x.is_shared);$("shareUrl").classList.toggle("hidden",!x.is_shared);$("shareUrl").textContent=x.is_shared?location.origin+location.pathname+"#share="+x.share_token:"";$("shareMessage").textContent="";$("shareModal").classList.add("open")}
+window.openShare=openShare;
+async function closeShare(){if(shareTarget){const on=$("shareSwitch").classList.contains("on");const update={is_shared:on};if(on){const {data}=await sb.from("entries").select("share_token").eq("id",shareTarget).eq("user_id",currentUser.id).single();if(data)update.share_token=data.share_token||crypto.randomUUID().replaceAll("-","")}const {error}=await sb.from("entries").update(update).eq("id",shareTarget).eq("user_id",currentUser.id);if(error)$("shareMessage").textContent="공유 설정을 저장하지 못했어.";await renderHome();await renderHistory();await renderShared()}shareTarget=null;$("shareModal").classList.remove("open")}
+$("shareSwitch").onclick=()=>{ $("shareSwitch").classList.toggle("on");$("shareUrl").classList.toggle("hidden",!$("shareSwitch").classList.contains("on"));if($("shareSwitch").classList.contains("on")&&shareTarget){$("shareUrl").textContent="공유 설정을 저장하면 링크가 만들어져요."}}
+async function copyShare(){let t=$("shareUrl").textContent;if(!t||t.includes("저장하면")){await closeShare();const es=await loadEntries();const x=es.find(a=>a.id===shareTarget);if(x?.is_shared)t=location.origin+location.pathname+"#share="+x.share_token}if(t){try{await navigator.clipboard.writeText(t);$("shareMessage").textContent="링크를 복사했어."}catch{prompt("이 링크를 복사해줘:",t)}}}
+async function login(){if(!configured){authMsg("먼저 config.js에 Supabase 설정을 넣어줘.");return}authMsg("로그인 중...");const {data,error}=await sb.auth.signInWithPassword({email:$("loginEmail").value.trim(),password:$("loginPassword").value});if(error){authMsg("로그인 정보를 확인해줘.");return}currentUser=data.user;showApp();renderProfile();nav("home")}
+async function signup(){if(!configured){authMsg("먼저 config.js에 Supabase 설정을 넣어줘.");return}const name=$("signupName").value.trim(),email=$("signupEmail").value.trim(),password=$("signupPassword").value;if(!email||password.length<6){authMsg("이메일과 6자 이상 비밀번호를 입력해줘.");return}authMsg("회원가입 중...");const {data,error}=await sb.auth.signUp({email,password,options:{data:{display_name:name||"사용자"},emailRedirectTo:location.origin+location.pathname}});if(error){authMsg("회원가입에 실패했어: "+error.message);return}if(!data.session){authMsg("가입 완료! 이메일 인증 후 로그인해줘.");return}currentUser=data.user;showApp();renderProfile();nav("home")}
+async function logout(){await sb.auth.signOut();currentUser=null;showAuth("login")}
+async function handleShareRoute(){const m=location.hash.match(/^#share=([A-Za-z0-9-]+)$/);if(!m)return false;if(!configured)return false;const {data,error}=await sb.rpc("get_shared_entry",{p_token:m[1]});if(error||!data){alert("공유 링크가 없거나 더 이상 공개되지 않아.");history.replaceState(null,"",location.pathname);return true}document.body.innerHTML=`<div class="app"><div class="auth-card" style="margin:70px auto;max-width:720px"><div class="auth-logo">MoodNote</div><div class="auth-sub">공유된 일기</div><div class="card" style="box-shadow:none"><div class="entry-date">${formatDate(data.date)}</div><div style="margin:10px 0;font-size:24px">${moodObj(data.mood).e} ${moodObj(data.mood).name}</div><div class="entry-meta">감정 강도 ${data.intensity}/5 ${(data.tags||[]).length?"· "+esc(data.tags.join(" · ")):""}</div><p style="white-space:pre-wrap;line-height:1.9;color:#555b61;margin-top:20px">${esc(data.content)}</p></div><div class="privacy">MoodNote에서 공유된 기록이에요.</div></div></div>`;return true}
+
+async function boot(){
+ initUI();
+ if(!configured){showAuth("login");authMsg("설정이 아직 필요해요. config.js에 Supabase URL과 Publishable Key를 넣어주세요.");return}
+ sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+ if(await handleShareRoute())return;
+ const {data}=await sb.auth.getSession();currentUser=data.session?.user||null;
+ if(currentUser){showApp();renderProfile();nav("home")}else showAuth("login");
+ sb.auth.onAuthStateChange((_event,session)=>{currentUser=session?.user||null;if(currentUser){showApp();renderProfile();nav("home")}else showAuth("login")});
+}
+boot();
+</script>
+</body>
+</html>

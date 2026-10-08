@@ -1,0 +1,10 @@
+{
+  "name": "moodnote — 나의 감정 기록",
+  "short_name": "moodnote",
+  "description": "나만의 감정과 일기를 기록하는 작은 공간",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#080b12",
+  "theme_color": "#080b12",
+  "lang": "ko"
+}
