@@ -113,7 +113,18 @@ footer{text-align:center;color:#858b91;font-size:10px;margin-top:25px}
 </section>
 
 <section id="history" class="page"><div class="hero"><div class="eyebrow">MY JOURNAL</div><h1>지난 기록</h1><p class="sub">내가 어떤 하루들을 지나왔는지 돌아봐.</p></div><div class="toolbar"><input id="search" placeholder="일기 내용이나 날짜 검색"></div><div class="card" id="entries"></div></section>
-
+<section id="feed" class="page">
+  <div class="hero">
+    <div class="eyebrow">COMMUNITY</div>
+    <h1>모두의 일기 🌍</h1>
+    <p class="sub">서로의 하루와 마음을 나누는 공간.</p>
+  </div>
+  <div class="card">
+    <div id="publicEntries">
+      <div class="empty">공개 일기를 불러오는 중...</div>
+    </div>
+  </div>
+</section>
 <section id="stats" class="page"><div class="hero"><div class="eyebrow">MY MOOD</div><h1>나의 감정 기록</h1><p class="sub">내 기록을 바탕으로 마음의 흐름을 살펴봐.</p></div><div class="stats"><div class="stat"><span>총 기록</span><b id="total">0</b></div><div class="stat"><span>가장 많이 느낀 감정</span><b id="topMood">—</b></div><div class="stat"><span>평균 감정 강도</span><b id="avgIntensity">—</b></div></div><div class="card"><h2>감정 분포</h2><div id="moodSummary" style="margin-top:15px"></div></div></section>
 
 <section id="shared" class="page"><div class="hero"><div class="eyebrow">SHARED</div><h1>공유한 일기</h1><p class="sub">내가 공유를 켠 기록만 여기에서 확인할 수 있어.</p></div><div class="card" id="sharedEntries"></div></section>
