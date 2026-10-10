@@ -172,7 +172,11 @@ function nav(page){
   window.scrollTo({top:0,behavior:"smooth"});
 }
 function initUI(){
-  $("moods").innerHTML=moods.map(m=>`<button class="mood" data-id="${m.id}"><span class="emoji">${m.e}</span><small>${m.name}</small></button>`).join("");
+  console.log("initUI 시작");
+window.addEventListener("error", e => {
+  console.error("오류:", e.message, "줄:", e.lineno);
+});
+ $("moods").innerHTML=moods.map(m=>`<button class="mood" data-id="${m.id}"><span class="emoji">${m.e}</span><small>${m.name}</small></button>`).join("");
   $("homeMoods").innerHTML=moods.map(m=>`<button class="mood" data-id="${m.id}"><span class="emoji">${m.e}</span><small>${m.name}</small></button>`).join("");
   $("tags").innerHTML=tags.map(t=>`<button class="tag" data-tag="${t}">${t}</button>`).join("");
   document.querySelectorAll("#moods .mood").forEach(b=>b.onclick=()=>selectMood(b.dataset.id));
