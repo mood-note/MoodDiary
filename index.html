@@ -207,7 +207,55 @@ function entryHTML(x){const m=moodObj(x.mood);return `<div class="entry"><div cl
 window.editEntry=async id=>{const es=await loadEntries();const x=es.find(a=>a.id===id);if(x)loadEntry(x)}
 window.deleteEntry=async id=>{if(!confirm("이 기록을 삭제할까요?"))return;const {error}=await sb.from("entries").delete().eq("id",id).eq("user_id",currentUser.id);if(error)alert("삭제하지 못했어.");await renderHome();await renderHistory();await renderStats();await renderShared()}
 async function renderHistory(){if(!currentUser)return;let es=await loadEntries();const q=$("search").value.trim().toLowerCase();if(q)es=es.filter(x=>(x.content+x.date+(x.tags||[]).join(" ")+moodObj(x.mood).name).toLowerCase().includes(q));$("entries").innerHTML=es.length?es.map(entryHTML).join(""):'<div class="empty">아직 기록이 없어.</div>'}
-async function renderStats(){const es=await loadEntries();$("total").textContent=es.length;if(!es.length){$("topMood").textContent="—";$("avgIntensity").textContent="—";$("moodSummary").innerHTML='<div class="empty">기록이 쌓이면 여기에 감정 흐름이 보여요.</div>';return}const counts={};es.forEach(x=>counts[x.mood]=(counts[x.mood]||0)+1);const top=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];$("topMood").textContent=moodObj(top[0]).e+" "+moodObj(top[0]).name;$("avgIntensity").textContent=(es.reduce((a,x)=>a+x.intensity,0)/es.length).toFixed(1)+"/5";$("moodSummary").innerHTML=moods.map(m=>{const n=counts[m.id]||0,p=Math.round(n/es.length*100);return `<div style="display:flex;align-items:center;gap:10px;margin:12px 0"><span style="width:55px">${m.e} ${m.name}</span><div style="flex:1;height:9px;background:#cdd1d4;border-radius:9px;overflow:hidden"><div style="width:${p}%;height:100%;background:linear-gradient(90deg,#92989d,#d4d7da);border-radius:9px"></div></div><small style="width:30px;text-align:right;color:#858b91">${n}</small></div>`}).join("")}
+async function renderFeed(){
+  if(!currentUser)return;
+
+  const box=$("publicEntries");
+  box.innerHTML='<div class="empty">일기를 불러오는 중...</div>';
+
+  const {data,error}=await sb
+    .from("entries")
+    .select("id,date,mood,intensity,tags,content,created_at")
+    .order("created_at",{ascending:false})
+    .limit(50);
+
+  if(error){
+    console.error("공개 일기 불러오기 실패:",error);
+    box.innerHTML='<div class="empty">일기를 불러오지 못했어. 다시 시도해 줘.</div>';
+    return;
+  }
+
+  if(!data||data.length===0){
+    box.innerHTML='<div class="empty">아직 공개된 일기가 없어.</div>';
+    return;
+  }
+
+  box.innerHTML=data.map(x=>{
+    const m=moodObj(x.mood);
+
+    return `
+      <div class="entry">
+        <div class="entry-head">
+          <div>
+            <div class="entry-date">${formatDate(x.date)}</div>
+            <div class="entry-meta">
+              ${m.name} · 감정 강도 ${x.intensity}/5
+              ${(x.tags||[]).length
+                ?' · '+esc(x.tags.join(' · '))
+                :''}
+            </div>
+          </div>
+          <div class="entry-mood">${m.e}</div>
+        </div>
+        <div class="entry-preview"
+             style="display:block;-webkit-line-clamp:unset">
+          ${esc(x.content)}
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+ async function renderStats(){const es=await loadEntries();$("total").textContent=es.length;if(!es.length){$("topMood").textContent="—";$("avgIntensity").textContent="—";$("moodSummary").innerHTML='<div class="empty">기록이 쌓이면 여기에 감정 흐름이 보여요.</div>';return}const counts={};es.forEach(x=>counts[x.mood]=(counts[x.mood]||0)+1);const top=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];$("topMood").textContent=moodObj(top[0]).e+" "+moodObj(top[0]).name;$("avgIntensity").textContent=(es.reduce((a,x)=>a+x.intensity,0)/es.length).toFixed(1)+"/5";$("moodSummary").innerHTML=moods.map(m=>{const n=counts[m.id]||0,p=Math.round(n/es.length*100);return `<div style="display:flex;align-items:center;gap:10px;margin:12px 0"><span style="width:55px">${m.e} ${m.name}</span><div style="flex:1;height:9px;background:#cdd1d4;border-radius:9px;overflow:hidden"><div style="width:${p}%;height:100%;background:linear-gradient(90deg,#92989d,#d4d7da);border-radius:9px"></div></div><small style="width:30px;text-align:right;color:#858b91">${n}</small></div>`}).join("")}
 async function renderShared(){const es=(await loadEntries()).filter(x=>x.is_shared);$("sharedEntries").innerHTML=es.length?es.map(entryHTML).join(""):'<div class="empty">아직 공유한 일기가 없어.</div>'}
 function renderProfile(){const meta=currentUser.user_metadata||{};$("profileName").textContent=meta.display_name||"사용자";$("profileEmail").textContent=currentUser.email||"";$("userName").textContent=meta.display_name||currentUser.email||"";$("hello").textContent=`안녕, ${meta.display_name||"오늘도"} 오늘도 잘 지냈어?`}
 async function openShare(id){shareTarget=id;const es=await loadEntries();const x=es.find(a=>a.id===id);if(!x)return;$("shareSwitch").classList.toggle("on",!!x.is_shared);$("shareUrl").classList.toggle("hidden",!x.is_shared);$("shareUrl").textContent=x.is_shared?location.origin+location.pathname+"#share="+x.share_token:"";$("shareMessage").textContent="";$("shareModal").classList.add("open")}
