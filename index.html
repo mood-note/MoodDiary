@@ -176,7 +176,18 @@ async function saveEntry(){
  else{q=await sb.from("entries").insert(row).select().single()}
  if(q.error){$("message").textContent="저장하지 못했어: "+q.error.message;return}
  $("message").textContent="저장했어. 오늘의 마음이 잘 기록됐어.";
- editingId=q.data.id;await renderHome();await renderHistory();await renderStats();
+editingId=null;
+$("diary").value="";
+selectedMood=null;
+selectedTags=[];
+
+document.querySelectorAll("#moods .mood").forEach(x=>x.classList.remove("selected"));
+document.querySelectorAll("#tags .tag").forEach(x=>x.classList.remove("selected"));
+
+await renderHome();
+await renderHistory();
+await renderStats();
+await renderShared();
 }
 async function loadEntries(){const {data,error}=await sb.from("entries").select("id,date,mood,intensity,tags,content,is_shared,share_token,created_at").eq("user_id",currentUser.id).order("date",{ascending:false});if(error){console.error(error);return[]}return data||[]}
 async function renderHome(){if(!currentUser)return;const es=(await loadEntries()).slice(0,3);$("recentEntries").innerHTML=es.length?es.map(entryHTML).join(""):'<div class="empty">아직 기록이 없어.<br>오늘의 마음부터 하나 남겨볼까?</div>'}
