@@ -153,7 +153,24 @@ function authMsg(t){$("authMessage").textContent=t||""}
 function showAuth(form="login"){ $("authView").classList.remove("hidden"); $("appView").classList.add("hidden"); $("loginForm").classList.toggle("hidden",form!=="login"); $("signupForm").classList.toggle("hidden",form!=="signup"); }
 function showApp(){ $("authView").classList.add("hidden"); $("appView").classList.remove("hidden"); }
 function nav(page){document.querySelectorAll(".navbtn[data-page]").forEach(x=>x.classList.toggle("active",x.dataset.page===page));document.querySelectorAll(".page").forEach(x=>x.classList.toggle("active",x.id===page));if(page==="home")renderHome();if(page==="history")renderHistory();if(page==="stats")renderStats();if(page==="shared")renderShared();if(page==="profile")renderProfile();window.scrollTo({top:0,behavior:"smooth"})}
-if(page==="feed")renderFeed();
+function nav(page){
+  document.querySelectorAll(".navbtn[data-page]").forEach(x=>{
+    x.classList.toggle("active",x.dataset.page===page);
+  });
+
+  document.querySelectorAll(".page").forEach(x=>{
+    x.classList.toggle("active",x.id===page);
+  });
+
+  if(page==="home")renderHome();
+  if(page==="history")renderHistory();
+  if(page==="feed")renderFeed();
+  if(page==="stats")renderStats();
+  if(page==="shared")renderShared();
+  if(page==="profile")renderProfile();
+
+  window.scrollTo({top:0,behavior:"smooth"});
+}
 function initUI(){
   $("moods").innerHTML=moods.map(m=>`<button class="mood" data-id="${m.id}"><span class="emoji">${m.e}</span><small>${m.name}</small></button>`).join("");
   $("homeMoods").innerHTML=moods.map(m=>`<button class="mood" data-id="${m.id}"><span class="emoji">${m.e}</span><small>${m.name}</small></button>`).join("");
