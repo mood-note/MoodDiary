@@ -228,8 +228,7 @@ function entryHTML(x){const m=moodObj(x.mood);return `<div class="entry"><div cl
 window.editEntry=async id=>{const es=await loadEntries();const x=es.find(a=>a.id===id);if(x)loadEntry(x)}
 window.deleteEntry=async id=>{if(!confirm("이 기록을 삭제할까요?"))return;const {error}=await sb.from("entries").delete().eq("id",id).eq("user_id",currentUser.id);if(error)alert("삭제하지 못했어.");await renderHome();await renderHistory();await renderStats();await renderShared()}
 async function renderHistory(){if(!currentUser)return;let es=await loadEntries();const q=$("search").value.trim().toLowerCase();if(q)es=es.filter(x=>(x.content+x.date+(x.tags||[]).join(" ")+moodObj(x.mood).name).toLowerCase().includes(q));$("entries").innerHTML=es.length?es.map(entryHTML).join(""):'<div class="empty">아직 기록이 없어.</div>'}
-async function renderFeed(){
-  if(!currentUser)return;
+
 
   const box=$("publicEntries");
   box.innerHTML='<div class="empty">일기를 불러오는 중...</div>';
