@@ -173,7 +173,8 @@ function nav(page){
 }
 function initUI(){
   console.log("initUI 시작");
-window.addEventListener("error", e => {
+$("authMessage").textContent = "화면 초기화 시작";
+ window.addEventListener("error", e => {
   console.error("오류:", e.message, "줄:", e.lineno);
 });
  $("moods").innerHTML=moods.map(m=>`<button class="mood" data-id="${m.id}"><span class="emoji">${m.e}</span><small>${m.name}</small></button>`).join("");
@@ -190,7 +191,8 @@ window.addEventListener("error", e => {
   $("search").oninput=renderHistory;
   $("loginBtn").onclick=login;
   $("signupBtn").onclick=signup;
-  $("showSignup").onclick=()=>{authMsg("");showAuth("signup")};
+  $("authMessage").textContent = "버튼 연결 완료";
+ $("showSignup").onclick=()=>{authMsg("");showAuth("signup")};
   $("showLogin").onclick=()=>{authMsg("");showAuth("login")};
   $("logoutBtn").onclick=logout; $("profileLogout").onclick=logout;
   $("closeShare").onclick=closeShare; $("doneShare").onclick=closeShare; $("copyShare").onclick=copyShare;
