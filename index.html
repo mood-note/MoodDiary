@@ -384,7 +384,16 @@ async function logout(){await sb.auth.signOut();currentUser=null;showAuth("login
 async function handleShareRoute(){const m=location.hash.match(/^#share=([A-Za-z0-9-]+)$/);if(!m)return false;if(!configured)return false;const {data,error}=await sb.rpc("get_shared_entry",{p_token:m[1]});if(error||!data){alert("공유 링크가 없거나 더 이상 공개되지 않아.");history.replaceState(null,"",location.pathname);return true}document.body.innerHTML=`<div class="app"><div class="auth-card" style="margin:70px auto;max-width:720px"><div class="auth-logo">MoodNote</div><div class="auth-sub">공유된 일기</div><div class="card" style="box-shadow:none"><div class="entry-date">${formatDate(data.date)}</div><div style="margin:10px 0;font-size:24px">${moodObj(data.mood).e} ${moodObj(data.mood).name}</div><div class="entry-meta">감정 강도 ${data.intensity}/5 ${(data.tags||[]).length?"· "+esc(data.tags.join(" · ")):""}</div><p style="white-space:pre-wrap;line-height:1.9;color:#555b61;margin-top:20px">${esc(data.content)}</p></div><div class="privacy">MoodNote에서 공유된 기록이에요.</div></div></div>`;return true}
 
 async function boot(){
- initUI();
+  try {
+   initUI();
+ } catch (e) {
+   console.error("화면 초기화 실패:", e);
+   const msg = document.getElementById("authMessage");
+   if (msg) {
+     msg.textContent = "오류 발생: " + e.message;
+   }
+   return;
+ }
  if(!configured){showAuth("login");authMsg("설정이 아직 필요해요. config.js에 Supabase URL과 Publishable Key를 넣어주세요.");return}
  sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
  if(await handleShareRoute())return;
