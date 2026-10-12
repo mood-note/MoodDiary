@@ -236,6 +236,7 @@ async function renderHistory(){if(!currentUser)return;let es=await loadEntries()
   const {data,error}=await sb
     .from("entries")
     .select("id,date,mood,intensity,tags,content,created_at")
+    .eq("is_shared", true)
     .order("created_at",{ascending:false})
     .limit(50);
 
