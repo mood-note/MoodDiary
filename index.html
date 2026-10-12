@@ -251,7 +251,7 @@ async function renderHistory(){if(!currentUser)return;let es=await loadEntries()
     return;
   }
 
-  box.innerHTML=data.map(x=>{
+    box.innerHTML=data.map(x=>{
     const m=moodObj(x.mood);
 
     return `
@@ -268,13 +268,107 @@ async function renderHistory(){if(!currentUser)return;let es=await loadEntries()
           </div>
           <div class="entry-mood">${m.e}</div>
         </div>
+
         <div class="entry-preview"
              style="display:block;-webkit-line-clamp:unset">
           ${esc(x.content)}
         </div>
+
+        <div class="comments">
+          <h3>💬 익명 댓글</h3>
+
+          <div id="comments-${x.id}">
+            <div class="empty">댓글을 불러오는 중...</div>
+          </div>
+
+          <textarea
+            id="comment-input-${x.id}"
+            maxlength="500"
+            placeholder="따뜻한 댓글을 남겨 봐 💗"
+            style="width:100%;min-height:75px;margin-top:12px;padding:12px;border:1px solid #ddd;border-radius:10px;box-sizing:border-box;font:inherit;">
+          </textarea>
+
+          <button
+            type="button"
+            onclick="postComment('${x.id}')"
+            style="margin-top:8px;">
+            익명으로 댓글 남기기
+          </button>
+        </div>
       </div>
     `;
   }).join("");
+}
+async function loadComments(entryId){
+  const box=$("comments-"+entryId);
+  if(!box)return;
+
+  const {data,error}=await sb
+    .from("entry_comments")
+    .select("id,body,created_at")
+    .eq("entry_id",entryId)
+    .order("created_at",{ascending:true});
+
+  if(error){
+    console.error("댓글 불러오기 실패:",error);
+    box.innerHTML='<div class="empty">댓글을 불러오지 못했어.</div>';
+    return;
+  }
+
+  if(!data||data.length===0){
+    box.innerHTML='<div class="empty">첫 번째 익명 댓글을 남겨 봐!</div>';
+    return;
+  }
+
+  box.innerHTML=data.map(c=>`
+    <div style="padding:12px 0;border-bottom:1px solid #eee;">
+      <div style="font-size:12px;color:#888;margin-bottom:5px;">
+        익명 · ${new Date(c.created_at).toLocaleString("ko-KR")}
+      </div>
+      <div style="white-space:pre-wrap;overflow-wrap:anywhere;">
+        ${esc(c.body)}
+      </div>
+    </div>
+  `).join("");
+}
+
+async function postComment(entryId){
+  const input=$("comment-input-"+entryId);
+  if(!input)return;
+
+  const body=input.value.trim();
+
+  if(!body){
+    alert("댓글 내용을 입력해 줘!");
+    return;
+  }
+
+  if(body.length>500){
+    alert("댓글은 500자 이내로 작성해 줘.");
+    return;
+  }
+
+  const button=input.parentElement.querySelector("button");
+  if(button)button.disabled=true;
+
+  const {error}=await sb
+    .from("entry_comments")
+    .insert({
+      entry_id:entryId,
+      body:body
+    });
+
+  if(error){
+    console.error("댓글 작성 실패:",error);
+    alert("댓글을 등록하지 못했어. 잠시 후 다시 시도해 줘.");
+    if(button)button.disabled=false;
+    return;
+  }
+
+  input.value="";
+  await loadComments(entryId);
+
+  if(button)button.disabled=false;
 }
  async function renderStats(){const es=await loadEntries();$("total").textContent=es.length;if(!es.length){$("topMood").textContent="—";$("avgIntensity").textContent="—";$("moodSummary").innerHTML='<div class="empty">기록이 쌓이면 여기에 감정 흐름이 보여요.</div>';return}const counts={};es.forEach(x=>counts[x.mood]=(counts[x.mood]||0)+1);const top=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];$("topMood").textContent=moodObj(top[0]).e+" "+moodObj(top[0]).name;$("avgIntensity").textContent=(es.reduce((a,x)=>a+x.intensity,0)/es.length).toFixed(1)+"/5";$("moodSummary").innerHTML=moods.map(m=>{const n=counts[m.id]||0,p=Math.round(n/es.length*100);return `<div style="display:flex;align-items:center;gap:10px;margin:12px 0"><span style="width:55px">${m.e} ${m.name}</span><div style="flex:1;height:9px;background:#cdd1d4;border-radius:9px;overflow:hidden"><div style="width:${p}%;height:100%;background:linear-gradient(90deg,#92989d,#d4d7da);border-radius:9px"></div></div><small style="width:30px;text-align:right;color:#858b91">${n}</small></div>`}).join("")}
 async function renderShared(){const es=(await loadEntries()).filter(x=>x.is_shared);$("sharedEntries").innerHTML=es.length?es.map(entryHTML).join(""):'<div class="empty">아직 공유한 일기가 없어.</div>'}
