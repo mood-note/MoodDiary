@@ -300,6 +300,9 @@ async function renderFeed(){
       </div>
     `;
   }).join("");
+await Promise.all(
+  data.map(x => loadComments(x.id))
+);
 }
 async function loadComments(entryId){
   const box=$("comments-"+entryId);
